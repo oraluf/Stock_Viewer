@@ -1,0 +1,293 @@
+/* ── Reset ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Base ────────────────────────────────────────────────── */
+body {
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+/* ── App shell ───────────────────────────────────────────── */
+.app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 28px 20px;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 28px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #1e293b;
+}
+.header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+.subtitle {
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+/* ── Grid ────────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+@media (max-width: 720px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* ── Landing (sector cards) ───────────────────────────────── */
+.landing {
+  margin-bottom: 24px;
+}
+.landing-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+@media (max-width: 720px) {
+  .landing-cards { grid-template-columns: 1fr; }
+}
+.sector-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 140px;
+  padding: 24px;
+  background: #1e293b;
+  border: 1px solid #293548;
+  border-radius: 14px;
+  color: #e2e8f0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.sector-card:hover {
+  border-color: #3b82f6;
+  background: #233044;
+  transform: translateY(-2px);
+}
+.sector-card:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+.sector-card.skeleton {
+  cursor: default;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.sector-card.skeleton:hover {
+  transform: none;
+  border-color: #293548;
+  background: #1e293b;
+}
+.sector-card-label {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 6px;
+}
+.sector-card-tickers {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* ── Sector detail + Back to Home ──────────────────────────── */
+.sector-detail-header {
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+.back-button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.back-button:hover {
+  background: #334155;
+  color: #f1f5f9;
+}
+.sector-detail-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+.sector-detail .grid {
+  margin-bottom: 28px;
+}
+
+/* ── Insights & Savings placeholders ─────────────────────── */
+.insights-placeholders {
+  padding: 20px;
+  background: #1e293b;
+  border: 1px solid #293548;
+  border-radius: 14px;
+}
+.insights-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin-bottom: 14px;
+}
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+}
+.insight-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.insight-label {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+.insight-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+.insight-desc {
+  font-size: 0.7rem;
+  color: #475569;
+}
+
+/* ── Section card ────────────────────────────────────────── */
+.section {
+  background: #1e293b;
+  border: 1px solid #293548;
+  border-radius: 14px;
+  padding: 20px;
+}
+.section.skeleton {
+  height: 320px;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* ── Section header ──────────────────────────────────────── */
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.industry-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+  background: #0f172a;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.ticker {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  flex: 1;
+}
+.quote-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.price {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+.change {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+.change.up   { color: #22c55e; background: #14532d30; }
+.change.down { color: #ef4444; background: #7f1d1d30; }
+
+.loading-text { font-size: 0.8rem; color: #475569; }
+.badge.error  { font-size: 0.75rem; color: #ef4444; }
+
+/* ── Tabs ────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.tab {
+  padding: 4px 14px;
+  border-radius: 7px;
+  border: 1px solid #334155;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tab:hover  { background: #334155; color: #cbd5e1; }
+.tab.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+
+/* ── Chart ───────────────────────────────────────────────── */
+.chart-wrap {
+  height: 200px;
+  position: relative;
+}
+.chart-placeholder {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  font-size: 0.82rem;
+}
+.chart-placeholder.err { color: #ef4444; }
+.chart-mock-badge {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  z-index: 1;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  background: #1e293b;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* ── Fatal error ─────────────────────────────────────────── */
+.fatal-error {
+  max-width: 480px;
+  margin: 80px auto;
+  text-align: center;
+  color: #ef4444;
+  line-height: 1.7;
+}
+.fatal-error h2 { margin-bottom: 10px; }
+.fatal-error p  { color: #94a3b8; font-size: 0.9rem; }

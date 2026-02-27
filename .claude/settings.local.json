@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(taskkill:*)",
+      "Bash(cd:*)",
+      "Bash(curl:*)",
+      "Bash(node --version:*)",
+      "Bash(npm:*)"
+    ]
+  }
+}
