@@ -5,11 +5,11 @@
 const BASE = 'https://finnhub.io/api/v1';
 
 // Maps friendly display tickers → Finnhub API symbols
+// GLD / SLV are standard NYSE ETFs — no mapping needed (free tier OK)
+// OANDA symbols (XAU_USD, XAG_USD) require a paid plan — removed
 const SYMBOL_MAP = {
-  BTC:    'BINANCE:BTCUSDT',
-  ETH:    'BINANCE:ETHUSDT',
-  GOLD:   'OANDA:XAU_USD',
-  SILVER: 'OANDA:XAG_USD',
+  BTC: 'BINANCE:BTCUSDT',
+  ETH: 'BINANCE:ETHUSDT',
 };
 function toApiSymbol(ticker) {
   return SYMBOL_MAP[ticker] || ticker;

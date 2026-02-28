@@ -6,6 +6,6 @@ module.exports = {
     { id: 'technology',    label: 'Technology',     tickers: ['MSFT', 'AAPL', 'META', 'AMZN'] },
     { id: 'leading_index', label: 'Leading Index', tickers: ['SPY', 'QQQ', 'DIA', 'IWM'] },
     { id: 'crypto',        label: 'Crypto',        tickers: ['BTC', 'ETH'] },
-    { id: 'metals',        label: 'Metals',        tickers: ['GOLD', 'SILVER'] },
+    { id: 'metals',        label: 'Metals',        tickers: ['GLD', 'SLV'] },
   ],
 };
