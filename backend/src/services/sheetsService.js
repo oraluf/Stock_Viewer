@@ -69,12 +69,18 @@
 // ─── END OF APPS SCRIPT ──────────────────────────────────────────────────────
 
 async function post(url, body) {
+  console.log('[Webhook] POST →', url);
   const res = await fetch(url, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify(body),
   });
-  if (!res.ok) console.warn(`Webhook returned HTTP ${res.status}`);
+  const text = await res.text();
+  if (res.ok) {
+    console.log('[Webhook] OK', res.status, '|', text.slice(0, 120));
+  } else {
+    console.warn('[Webhook] HTTP', res.status, '|', text.slice(0, 200));
+  }
 }
 
 /**
@@ -85,14 +91,20 @@ async function appendReport(report) {
   const sheetsUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
   const docsUrl   = process.env.GOOGLE_DOCS_WEBHOOK_URL;
 
-  if (!sheetsUrl && !docsUrl) return;
+  if (!sheetsUrl && !docsUrl) {
+    console.log('[Webhook] No webhook URLs set — skipping. Add GOOGLE_DOCS_WEBHOOK_URL to .env');
+    return;
+  }
+
+  console.log('[Webhook] GOOGLE_DOCS_WEBHOOK_URL:', docsUrl   ? '✓ set' : '✗ not set');
+  console.log('[Webhook] GOOGLE_SHEETS_WEBHOOK_URL:', sheetsUrl ? '✓ set' : '✗ not set');
 
   const targets = [...new Set([sheetsUrl, docsUrl].filter(Boolean))];
 
   await Promise.allSettled(
     targets.map((url) =>
       post(url, report).catch((err) =>
-        console.warn('Webhook failed (non-fatal):', err.message)
+        console.warn('[Webhook] Failed (non-fatal):', err.message)
       )
     )
   );

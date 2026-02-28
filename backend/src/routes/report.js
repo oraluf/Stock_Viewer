@@ -39,4 +39,40 @@ router.post('/generate', async (req, res) => {
   }
 });
 
+// POST /report/test-doc — sends a Hello World payload to GOOGLE_DOCS_WEBHOOK_URL.
+// Use this to isolate whether the issue is the connection or the report logic.
+router.post('/test-doc', async (_req, res) => {
+  const docsUrl = process.env.GOOGLE_DOCS_WEBHOOK_URL;
+  if (!docsUrl) {
+    return res.status(400).json({ error: 'GOOGLE_DOCS_WEBHOOK_URL is not set in .env' });
+  }
+
+  const payload = {
+    date: new Date().toISOString().slice(0, 10),
+    economicSavings: 0.42,
+    asOf: new Date().toISOString(),
+    sectors: [{
+      label: 'TEST',
+      avgDailyChangePercent: 1.23,
+      analysis: 'Hello World — connection test from Stock Viewer backend.',
+      stocks: [{ ticker: 'TEST', price: 100, changePercent: 1.23 }],
+    }],
+  };
+
+  try {
+    console.log('[test-doc] Sending test payload to', docsUrl);
+    const response = await fetch(docsUrl, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+    const text = await response.text();
+    console.log('[test-doc] Status:', response.status, '| Body:', text);
+    res.json({ webhookStatus: response.status, webhookBody: text });
+  } catch (err) {
+    console.error('[test-doc] Fetch error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
