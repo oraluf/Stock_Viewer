@@ -291,3 +291,112 @@ body {
 }
 .fatal-error h2 { margin-bottom: 10px; }
 .fatal-error p  { color: #94a3b8; font-size: 0.9rem; }
+
+/* ── Header (updated layout) ─────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 28px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #1e293b;
+}
+.header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex: 1;
+}
+.header-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.header-date {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+.header-weather {
+  font-size: 0.7rem;
+  color: #475569;
+}
+.header-nav {
+  display: flex;
+  gap: 6px;
+}
+.nav-btn {
+  padding: 6px 16px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-btn:hover  { background: #334155; color: #cbd5e1; }
+.nav-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+
+/* ── Daily Insights page ─────────────────────────────────── */
+.daily-insights {
+  max-width: 860px;
+  margin: 0 auto;
+}
+.daily-insights-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.daily-insights-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+.insights-empty {
+  color: #475569;
+  font-size: 0.88rem;
+  margin-top: 32px;
+  text-align: center;
+}
+.insights-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 14px 18px;
+  background: #1e293b;
+  border: 1px solid #293548;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.insights-row-date {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 600;
+  min-width: 90px;
+}
+.insights-row-sectors {
+  display: flex;
+  gap: 14px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.insights-row-sector {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.insights-row-sector-label {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+.insights-row-savings {
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}

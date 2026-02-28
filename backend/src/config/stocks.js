@@ -4,6 +4,8 @@ module.exports = {
     { id: 'ai',            label: 'AI',            tickers: ['NVDA', 'GOOGL', 'AMD', 'PLTR'] },
     { id: 'energy',        label: 'Energy',        tickers: ['XOM', 'CVX', 'BP', 'SLB'] },
     { id: 'technology',    label: 'Technology',     tickers: ['MSFT', 'AAPL', 'META', 'AMZN'] },
-    { id: 'leading_index', label: 'Leading Index',  tickers: ['SPY', 'QQQ', 'DIA', 'IWM'] },
+    { id: 'leading_index', label: 'Leading Index', tickers: ['SPY', 'QQQ', 'DIA', 'IWM'] },
+    { id: 'crypto',        label: 'Crypto',        tickers: ['BTC', 'ETH'] },
+    { id: 'metals',        label: 'Metals',        tickers: ['GOLD', 'SILVER'] },
   ],
 };

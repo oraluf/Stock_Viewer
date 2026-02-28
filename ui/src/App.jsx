@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { fetchConfig } from './api';
+import { fetchConfig, fetchWeather } from './api';
 import IndustrySection from './components/IndustrySection';
 import InsightsPlaceholders from './components/InsightsPlaceholders';
+import DailyInsights from './components/DailyInsights';
 
 // Normalize config: backend may return sectors or legacy industries
 function normalizeSectors(data) {
@@ -14,6 +15,54 @@ function normalizeSectors(data) {
     }));
   }
   return [];
+}
+
+function AppHeader({ view, onViewChange }) {
+  const [weather, setWeather] = useState(null);
+
+  useEffect(() => {
+    fetchWeather().then(setWeather).catch(() => {});
+  }, []);
+
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'short',
+    month:   'short',
+    day:     'numeric',
+    year:    'numeric',
+  });
+
+  return (
+    <header className="header">
+      <div className="header-left">
+        <h1>Stock Dashboard</h1>
+        <span className="subtitle">Live market data · Finnhub</span>
+      </div>
+      <div className="header-center">
+        <span className="header-date">{today}</span>
+        {weather && (
+          <span className="header-weather">
+            {weather.houston.temp}°F Houston · {weather.paloAlto.temp}°F Palo Alto
+          </span>
+        )}
+      </div>
+      <nav className="header-nav">
+        <button
+          type="button"
+          className={`nav-btn ${view === 'home' ? 'active' : ''}`}
+          onClick={() => onViewChange('home')}
+        >
+          Dashboard
+        </button>
+        <button
+          type="button"
+          className={`nav-btn ${view === 'insights' ? 'active' : ''}`}
+          onClick={() => onViewChange('insights')}
+        >
+          Daily Insights
+        </button>
+      </nav>
+    </header>
+  );
 }
 
 function LandingPage({ sectors, onSelect }) {
@@ -64,6 +113,7 @@ function SectorDetailView({ sector, onBack }) {
 function App() {
   const [sectors, setSectors] = useState([]);
   const [selectedSector, setSelectedSector] = useState(null);
+  const [view, setView] = useState('home');   // 'home' | 'insights'
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -71,6 +121,11 @@ function App() {
       .then((data) => setSectors(normalizeSectors(data)))
       .catch((err) => setError(err.message));
   }, []);
+
+  function handleViewChange(newView) {
+    setView(newView);
+    setSelectedSector(null);
+  }
 
   if (error) {
     return (
@@ -84,12 +139,11 @@ function App() {
 
   return (
     <div className="app">
-      <header className="header">
-        <h1>Stock Dashboard</h1>
-        <span className="subtitle">Live market data · Finnhub</span>
-      </header>
+      <AppHeader view={view} onViewChange={handleViewChange} />
 
-      {selectedSector ? (
+      {view === 'insights' ? (
+        <DailyInsights />
+      ) : selectedSector ? (
         <SectorDetailView
           sector={selectedSector}
           onBack={() => setSelectedSector(null)}
@@ -97,7 +151,7 @@ function App() {
       ) : sectors.length === 0 ? (
         <div className="landing">
           <div className="landing-cards">
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="sector-card skeleton" />
             ))}
           </div>

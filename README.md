@@ -1,92 +1,121 @@
-# Stock Viewer
+# Stock Dashboard
 
-Real-time stock dashboard — 4 industries, 3 timeframe charts, Finnhub data.
+A real-time stock market dashboard — live prices and historical charts for 6 sectors (AI, Energy, Technology, Leading Index, Crypto, Metals), daily report archive, and market insights.
 
-| Industry      | Ticker |
-|---------------|--------|
-| AI            | NVDA   |
-| Energy        | XOM    |
-| Technology    | MSFT   |
-| Leading Index | SPY    |
+**Live demo:** _add your Vercel URL here_
 
-## Architecture
+---
+
+## Tech Stack
+
+| Layer    | Technology                        |
+|----------|-----------------------------------|
+| Frontend | React 18, Vite 5, Chart.js 4      |
+| Backend  | Node.js 18, Express 4             |
+| Data     | Finnhub API                       |
+| Deploy   | Vercel (UI) + Render (Backend)    |
+
+---
+
+## Project Structure
 
 ```
-routes/   → HTTP only, no logic
-services/ → business logic + cache orchestration
-adapters/ → Finnhub API isolation (swap without touching services)
-storage/  → in-memory key-value store
-config/   → ticker/industry list
+Stock_Viewer/
+├── backend/
+│   └── src/
+│       ├── app.js                      # Express entry point
+│       ├── routes/                     # HTTP handlers (no logic)
+│       ├── services/                   # Business logic + cache + reports
+│       ├── adapters/finnhubProvider.js # Finnhub API (swappable)
+│       ├── config/stocks.js            # Sectors & tickers — single source of truth
+│       └── storage/                    # In-memory store + reports archive
+└── ui/
+    └── src/
+        ├── App.jsx                     # App shell + view routing
+        ├── api.js                      # All fetch calls to backend
+        └── components/
+            ├── IndustrySection.jsx     # Stock card: quote + chart
+            ├── StockChart.jsx          # Chart.js line chart + demo fallback
+            ├── InsightsPlaceholders.jsx# Economic Savings + Weather
+            └── DailyInsights.jsx       # Daily report archive viewer
 ```
 
-## Quick Start
+---
 
-### 1. Get a free Finnhub API key
-Sign up at https://finnhub.io/register (free tier is enough).
+## Run Locally
 
-### 2. Create backend/.env
-```powershell
-Copy-Item .env.example backend\.env
-# Then open backend\.env and set FINNHUB_API_KEY=<your key>
-```
+### Prerequisites
+- Node.js 18+
+- A free [Finnhub API key](https://finnhub.io)
 
-### 3. Install dependencies
-```powershell
-# Backend
+### 1. Backend
+
+```bash
 cd backend
+# Copy the example env file and fill in your key
+cp ../.env.example .env
 npm install
-
-# UI (new terminal)
-cd ..\ui
-npm install
+npm run dev       # → http://localhost:3001
 ```
 
-### 4. Run the backend
-```powershell
-cd backend
-npm start
-# → http://localhost:3001
-```
+### 2. Frontend (new terminal)
 
-### 5. Run the UI (new terminal)
-```powershell
+```bash
 cd ui
-npm run dev
-# → http://localhost:3000
+npm install
+npm run dev       # → http://localhost:3000
 ```
 
-Open **http://localhost:3000** in your browser.
+Vite proxies all `/quote`, `/series`, etc. calls to `:3001` automatically.
+
+---
+
+## Deploy (Free)
+
+### Backend → Render
+
+1. [render.com](https://render.com) → **New Web Service** → connect GitHub repo
+2. Render auto-detects `render.yaml`
+3. Add env var: `FINNHUB_API_KEY` = your key
+4. Deploy → copy the URL (e.g. `https://stock-viewer-backend.onrender.com`)
+
+> Free tier sleeps after 15 min of inactivity; first request after sleep is slow (~30s).
+
+### Frontend → Vercel
+
+1. [vercel.com](https://vercel.com) → **New Project** → import GitHub repo
+2. Add env var: `VITE_API_URL` = your Render URL
+3. Deploy → share the link
+
+---
+
+## Environment Variables
+
+| Variable          | Location       | Description                         |
+|-------------------|----------------|-------------------------------------|
+| `FINNHUB_API_KEY` | `backend/.env` | Finnhub API key                     |
+| `VITE_API_URL`    | Vercel env vars| Backend URL (empty in local dev)    |
 
 ---
 
 ## API Endpoints
 
-| Method | Path                              | Description            |
-|--------|-----------------------------------|------------------------|
-| GET    | /health                           | Health check           |
-| GET    | /config                           | Industries + tickers   |
-| GET    | /quote?ticker=NVDA                | Price + daily change % |
-| GET    | /series?ticker=NVDA&range=1D      | OHLC candle array      |
+| Method | Path                            | Description                        |
+|--------|---------------------------------|------------------------------------|
+| GET    | `/health`                       | Health check                       |
+| GET    | `/config`                       | All sectors + tickers              |
+| GET    | `/quote?ticker=NVDA`            | Live quote (price + daily change)  |
+| GET    | `/series?ticker=NVDA&range=1D`  | OHLCV candles (1D / 1M / 1Y)      |
+| GET    | `/report/daily`                 | Today's sector performance report  |
+| GET    | `/report/archive`               | History of saved daily reports     |
+| GET    | `/weather`                      | Weather placeholder (Houston + Palo Alto) |
 
-## Test with curl (PowerShell)
+---
 
-```powershell
-# 1. Health
-curl http://localhost:3001/health
+## Design Principles
 
-# 2. Config
-curl http://localhost:3001/config
-
-# 3. Quote
-curl "http://localhost:3001/quote?ticker=NVDA"
-
-# 4. Series — 1D intraday
-curl "http://localhost:3001/series?ticker=NVDA&range=1D"
-```
-
-## Cache TTLs
-- Quote  → 30 seconds
-- Series → 5 minutes
-
-## Change tickers
-Edit `backend/src/config/stocks.js` — no other file needs to change.
+- **Adapter Pattern** — Finnhub is isolated in one file; swap to another provider by editing one function
+- **TTL Cache** — 30s for quotes, 5min for series — minimises API rate-limit hits
+- **Graceful Degradation** — Charts fall back to demo data on API failure; UI never crashes
+- **Single Source of Truth** — All sectors/tickers defined once in `config/stocks.js`
+- **Trading-Day Awareness** — Daily reports are only auto-saved on weekdays

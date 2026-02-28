@@ -1,6 +1,13 @@
 // Daily report service: sector performance and Economic Savings (AI vs Energy)
 const stocksConfig = require('../config/stocks');
 const marketDataService = require('./marketDataService');
+const reportsStore = require('../storage/reportsStore');
+
+// Returns true only on Mon–Fri (US trading days; does not account for holidays)
+function isTradingDay() {
+  const day = new Date().getDay(); // 0=Sun, 6=Sat
+  return day >= 1 && day <= 5;
+}
 
 /**
  * Fetches quotes for all tickers in a sector and returns average daily change %.
@@ -21,6 +28,7 @@ async function getSectorAvgDailyChange(tickers) {
 
 /**
  * Builds the daily report: sector averages and Economic Savings (AI avg − Energy avg).
+ * On trading days, auto-saves the report to the archive.
  */
 async function getDailyReport() {
   const sectors = stocksConfig.sectors || [];
@@ -45,7 +53,7 @@ async function getDailyReport() {
   const economicSavings =
     aiResult.avgDailyChangePercent - energyResult.avgDailyChangePercent;
 
-  return {
+  const report = {
     date: new Date().toISOString().slice(0, 10),
     sectors: [
       {
@@ -64,6 +72,20 @@ async function getDailyReport() {
     economicSavings: Math.round(economicSavings * 100) / 100,
     asOf: new Date().toISOString(),
   };
+
+  // Auto-save to archive only on trading days
+  if (isTradingDay()) {
+    reportsStore.save(report);
+  }
+
+  return report;
 }
 
-module.exports = { getDailyReport };
+/**
+ * Returns all archived daily reports (newest first).
+ */
+function getArchive() {
+  return reportsStore.getAll();
+}
+
+module.exports = { getDailyReport, getArchive };

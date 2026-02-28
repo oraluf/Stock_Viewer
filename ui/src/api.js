@@ -14,5 +14,6 @@ async function request(path) {
 export const fetchConfig = ()             => request('/config');
 export const fetchQuote  = (ticker)       => request(`/quote?ticker=${ticker}`);
 export const fetchSeries = (ticker, range)=> request(`/series?ticker=${ticker}&range=${range}`);
-export const fetchReportDaily = ()       => request('/report/daily');
-export const fetchWeather = ()           => request('/weather');
+export const fetchReportDaily   = ()      => request('/report/daily');
+export const fetchReportArchive = ()      => request('/report/archive');
+export const fetchWeather       = ()      => request('/weather');

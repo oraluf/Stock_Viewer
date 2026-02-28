@@ -4,6 +4,17 @@
 
 const BASE = 'https://finnhub.io/api/v1';
 
+// Maps friendly display tickers → Finnhub API symbols
+const SYMBOL_MAP = {
+  BTC:    'BINANCE:BTCUSDT',
+  ETH:    'BINANCE:ETHUSDT',
+  GOLD:   'OANDA:XAU_USD',
+  SILVER: 'OANDA:XAG_USD',
+};
+function toApiSymbol(ticker) {
+  return SYMBOL_MAP[ticker] || ticker;
+}
+
 async function httpGet(url) {
   const res = await fetch(url);        // Node 18+ native fetch
   if (!res.ok) throw new Error(`Finnhub HTTP ${res.status}`);
@@ -16,7 +27,8 @@ async function getQuote(ticker) {
   const key = process.env.FINNHUB_API_KEY;
   if (!key) throw new Error('FINNHUB_API_KEY env var is not set');
 
-  const data = await httpGet(`${BASE}/quote?symbol=${ticker}&token=${key}`);
+  const symbol = toApiSymbol(ticker);
+  const data = await httpGet(`${BASE}/quote?symbol=${symbol}&token=${key}`);
 
   if (data.c === undefined || data.c === null) {
     throw new Error(`No quote data returned for ${ticker}`);
@@ -47,8 +59,9 @@ async function getSeries(ticker, range) {
   const key = process.env.FINNHUB_API_KEY;
   if (!key) throw new Error('FINNHUB_API_KEY env var is not set');
 
+  const symbol = toApiSymbol(ticker);
   const { resolution, from, to } = rangeParams(range);
-  const url = `${BASE}/stock/candle?symbol=${ticker}&resolution=${resolution}&from=${from}&to=${to}&token=${key}`;
+  const url = `${BASE}/stock/candle?symbol=${symbol}&resolution=${resolution}&from=${from}&to=${to}&token=${key}`;
 
   const data = await httpGet(url);
 
