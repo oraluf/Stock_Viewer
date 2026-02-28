@@ -1,7 +1,8 @@
 // Daily report service: sector performance and Economic Savings (AI vs Energy)
-const stocksConfig = require('../config/stocks');
+const stocksConfig      = require('../config/stocks');
 const marketDataService = require('./marketDataService');
-const reportsStore = require('../storage/reportsStore');
+const reportsStore      = require('../storage/reportsStore');
+const sheetsService     = require('./sheetsService');
 
 // Returns true only on Mon–Fri (US trading days; does not account for holidays)
 function isTradingDay() {
@@ -11,8 +12,6 @@ function isTradingDay() {
 
 /**
  * Fetches quotes for all tickers in a sector and returns average daily change %.
- * @param {string[]} tickers
- * @returns {{ avgDailyChangePercent: number, quotes: object[] }}
  */
 async function getSectorAvgDailyChange(tickers) {
   const quotes = await Promise.all(
@@ -27,17 +26,18 @@ async function getSectorAvgDailyChange(tickers) {
 }
 
 /**
- * Builds the daily report: sector averages and Economic Savings (AI avg − Energy avg).
- * On trading days, auto-saves the report to the archive.
+ * Core report builder — shared by getDailyReport and generateReport.
+ * @param {string}  date          ISO date label (YYYY-MM-DD)
+ * @param {boolean} forceArchive  save regardless of trading-day check
  */
-async function getDailyReport() {
-  const sectors = stocksConfig.sectors || [];
-  const aiSector = sectors.find((s) => s.id === 'ai');
+async function buildReport(date, forceArchive = false) {
+  const sectors      = stocksConfig.sectors || [];
+  const aiSector     = sectors.find((s) => s.id === 'ai');
   const energySector = sectors.find((s) => s.id === 'energy');
 
   if (!aiSector || !energySector) {
     return {
-      date: new Date().toISOString().slice(0, 10),
+      date,
       sectors: [],
       economicSavings: null,
       error: 'AI or Energy sector not configured',
@@ -49,21 +49,20 @@ async function getDailyReport() {
     getSectorAvgDailyChange(energySector.tickers),
   ]);
 
-  // Economic Savings: average daily change of AI minus average daily change of Energy
   const economicSavings =
     aiResult.avgDailyChangePercent - energyResult.avgDailyChangePercent;
 
   const report = {
-    date: new Date().toISOString().slice(0, 10),
+    date,
     sectors: [
       {
-        id: aiSector.id,
+        id:  aiSector.id,
         label: aiSector.label,
         avgDailyChangePercent: Math.round(aiResult.avgDailyChangePercent * 100) / 100,
         tickerCount: aiSector.tickers.length,
       },
       {
-        id: energySector.id,
+        id:  energySector.id,
         label: energySector.label,
         avgDailyChangePercent: Math.round(energyResult.avgDailyChangePercent * 100) / 100,
         tickerCount: energySector.tickers.length,
@@ -73,19 +72,31 @@ async function getDailyReport() {
     asOf: new Date().toISOString(),
   };
 
-  // Auto-save to archive only on trading days
-  if (isTradingDay()) {
+  if (forceArchive || isTradingDay()) {
     reportsStore.save(report);
+    sheetsService.appendReport(report); // fire-and-forget; no-op if not configured
   }
 
   return report;
 }
 
+/** Builds today's report. Auto-saves on trading days. */
+async function getDailyReport() {
+  return buildReport(new Date().toISOString().slice(0, 10), false);
+}
+
 /**
- * Returns all archived daily reports (newest first).
+ * Manually generates a report for any date label and force-saves it.
+ * Useful when the market is closed (weekends / holidays).
+ * @param {string} date  YYYY-MM-DD
  */
+async function generateReport(date) {
+  return buildReport(date || new Date().toISOString().slice(0, 10), true);
+}
+
+/** Returns all archived daily reports (newest first). */
 function getArchive() {
   return reportsStore.getAll();
 }
 
-module.exports = { getDailyReport, getArchive };
+module.exports = { getDailyReport, generateReport, getArchive };

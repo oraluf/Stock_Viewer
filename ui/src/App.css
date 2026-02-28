@@ -293,14 +293,17 @@ body {
 .fatal-error p  { color: #94a3b8; font-size: 0.9rem; }
 
 /* ── Header (updated layout) ─────────────────────────────── */
+.header-wrap {
+  margin-bottom: 28px;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 0;
+}
 .header {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 14px;
-  margin-bottom: 28px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid #1e293b;
+  padding-bottom: 14px;
 }
 .header-left {
   display: flex;
@@ -399,4 +402,76 @@ body {
   font-size: 0.82rem;
   font-weight: 600;
   white-space: nowrap;
+}
+
+/* ── News Ticker ─────────────────────────────────────────── */
+.news-ticker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0 10px;
+  overflow: hidden;
+}
+.news-ticker-label {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #3b82f6;
+  background: #1e3a5f;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.news-ticker-track {
+  overflow: hidden;
+  flex: 1;
+  white-space: nowrap;
+}
+.news-ticker-content {
+  display: inline-block;
+  animation: ticker-scroll 60s linear infinite;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+.news-ticker-content:hover {
+  animation-play-state: paused;
+}
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── Manual Generate Panel ───────────────────────────────── */
+.generate-panel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #1e293b;
+  border: 1px solid #293548;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+.generate-label {
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+.generate-date-input {
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.generate-date-input:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+}
+.generate-msg {
+  font-size: 0.8rem;
+  font-weight: 500;
 }

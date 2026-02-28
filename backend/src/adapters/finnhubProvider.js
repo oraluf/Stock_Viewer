@@ -80,4 +80,22 @@ async function getSeries(ticker, range) {
   }));
 }
 
-module.exports = { getQuote, getSeries };
+// ─── Market News ──────────────────────────────────────────────────────────────
+
+async function getNews(category = 'general', count = 12) {
+  const key = process.env.FINNHUB_API_KEY;
+  if (!key) throw new Error('FINNHUB_API_KEY env var is not set');
+
+  const data = await httpGet(`${BASE}/news?category=${category}&token=${key}`);
+  if (!Array.isArray(data)) throw new Error('Unexpected news response from Finnhub');
+
+  return data.slice(0, count).map((item) => ({
+    id:       item.id,
+    headline: item.headline,
+    source:   item.source,
+    url:      item.url,
+    datetime: item.datetime,
+  }));
+}
+
+module.exports = { getQuote, getSeries, getNews };

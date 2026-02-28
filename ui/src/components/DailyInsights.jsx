@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchReportArchive, fetchReportDaily } from '../api';
+import { fetchReportArchive, generateReport } from '../api';
 
 function sign(n) {
   return n > 0 ? `+${n}%` : `${n}%`;
@@ -30,12 +30,17 @@ function ReportRow({ report }) {
 }
 
 export default function DailyInsights() {
-  const [archive, setArchive] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
+  const [archive,    setArchive]    = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState(null);
 
-  function load() {
+  // Manual generate state
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const [genDate,    setGenDate]    = useState(yesterday);
+  const [generating, setGenerating] = useState(false);
+  const [genMsg,     setGenMsg]     = useState(null); // { type: 'ok'|'err', text }
+
+  function loadArchive() {
     setLoading(true);
     fetchReportArchive()
       .then((data) => { setArchive(data); setError(null); })
@@ -43,18 +48,19 @@ export default function DailyInsights() {
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { loadArchive(); }, []);
 
-  async function handleRefresh() {
-    setRefreshing(true);
+  async function handleGenerate() {
+    setGenerating(true);
+    setGenMsg(null);
     try {
-      // Trigger a fresh daily report (also saves it to the archive on trading days)
-      await fetchReportDaily();
-      load();
-    } catch {
-      load();
+      const report = await generateReport(genDate);
+      setGenMsg({ type: 'ok', text: `Report for ${report.date} saved.` });
+      loadArchive();
+    } catch (e) {
+      setGenMsg({ type: 'err', text: e.message });
     } finally {
-      setRefreshing(false);
+      setGenerating(false);
     }
   }
 
@@ -62,23 +68,44 @@ export default function DailyInsights() {
     <section className="daily-insights">
       <div className="daily-insights-header">
         <h2 className="daily-insights-title">Daily Insights Archive</h2>
-        <button
-          type="button"
-          className="back-button"
-          onClick={handleRefresh}
-          disabled={refreshing}
-        >
-          {refreshing ? 'Refreshing…' : '↻ Refresh today'}
-        </button>
       </div>
 
+      {/* ── Manual generate ── */}
+      <div className="generate-panel">
+        <span className="generate-label">Generate report for:</span>
+        <input
+          type="date"
+          className="generate-date-input"
+          value={genDate}
+          max={new Date().toISOString().slice(0, 10)}
+          onChange={(e) => setGenDate(e.target.value)}
+        />
+        <button
+          type="button"
+          className="nav-btn active"
+          onClick={handleGenerate}
+          disabled={generating || !genDate}
+        >
+          {generating ? 'Generating…' : '▶ Generate'}
+        </button>
+        {genMsg && (
+          <span
+            className="generate-msg"
+            style={{ color: genMsg.type === 'ok' ? '#22c55e' : '#ef4444' }}
+          >
+            {genMsg.text}
+          </span>
+        )}
+      </div>
+
+      {/* ── Archive list ── */}
       {loading && <p className="insights-empty">Loading archive…</p>}
       {error   && <p className="insights-empty" style={{ color: '#ef4444' }}>{error}</p>}
 
       {!loading && !error && archive.length === 0 && (
         <p className="insights-empty">
-          No reports yet. Reports are saved automatically on trading days (Mon–Fri)
-          when the dashboard is visited.
+          No reports yet. Use the generator above or visit the Dashboard on a trading day
+          (Mon–Fri) to auto-save today's report.
         </p>
       )}
 

@@ -10,6 +10,7 @@ const quoteRouter  = require('./routes/quote');
 const seriesRouter = require('./routes/series');
 const reportRouter = require('./routes/report');
 const weatherRouter = require('./routes/weather');
+const newsRouter   = require('./routes/news');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use('/quote',  quoteRouter);
 app.use('/series', seriesRouter);
 app.use('/report', reportRouter);
 app.use('/weather', weatherRouter);
+app.use('/news',   newsRouter);
 
 // 404 catch-all
 app.use((_req, res) => {

@@ -17,3 +17,15 @@ export const fetchSeries = (ticker, range)=> request(`/series?ticker=${ticker}&r
 export const fetchReportDaily   = ()      => request('/report/daily');
 export const fetchReportArchive = ()      => request('/report/archive');
 export const fetchWeather       = ()      => request('/weather');
+export const fetchNews          = ()      => request('/news');
+
+export function generateReport(date) {
+  return fetch(`${BASE}/report/generate`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ date }),
+  }).then((res) => {
+    if (!res.ok) return res.json().then((b) => Promise.reject(new Error(b.error || `HTTP ${res.status}`)));
+    return res.json();
+  });
+}

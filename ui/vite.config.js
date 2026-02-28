@@ -13,6 +13,7 @@ export default defineConfig({
       '/series':  'http://localhost:3001',
       '/report':  'http://localhost:3001',
       '/weather': 'http://localhost:3001',
+      '/news':    'http://localhost:3001',
     },
   },
 });

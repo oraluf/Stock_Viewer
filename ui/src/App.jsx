@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchConfig, fetchWeather } from './api';
+import { fetchConfig, fetchWeather, fetchNews } from './api';
 import IndustrySection from './components/IndustrySection';
 import InsightsPlaceholders from './components/InsightsPlaceholders';
 import DailyInsights from './components/DailyInsights';
@@ -17,6 +17,32 @@ function normalizeSectors(data) {
   return [];
 }
 
+function NewsTicker() {
+  const [headlines, setHeadlines] = useState([]);
+
+  useEffect(() => {
+    fetchNews()
+      .then((items) => setHeadlines(items.map((i) => i.headline)))
+      .catch(() => {});
+  }, []);
+
+  if (!headlines.length) return null;
+
+  // Duplicate the list so the scroll loops seamlessly
+  const text = headlines.join('   ·   ');
+
+  return (
+    <div className="news-ticker" aria-label="Market news">
+      <span className="news-ticker-label">NEWS</span>
+      <div className="news-ticker-track">
+        <span className="news-ticker-content">
+          {text}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{text}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function AppHeader({ view, onViewChange }) {
   const [weather, setWeather] = useState(null);
 
@@ -32,35 +58,38 @@ function AppHeader({ view, onViewChange }) {
   });
 
   return (
-    <header className="header">
-      <div className="header-left">
-        <h1>Stock Dashboard</h1>
-        <span className="subtitle">Live market data · Finnhub</span>
+    <header className="header-wrap">
+      <div className="header">
+        <div className="header-left">
+          <h1>Stock Dashboard</h1>
+          <span className="subtitle">Live market data · Finnhub</span>
+        </div>
+        <div className="header-center">
+          <span className="header-date">{today}</span>
+          {weather && (
+            <span className="header-weather">
+              {weather.houston.temp}°F Houston · {weather.paloAlto.temp}°F Palo Alto
+            </span>
+          )}
+        </div>
+        <nav className="header-nav">
+          <button
+            type="button"
+            className={`nav-btn ${view === 'home' ? 'active' : ''}`}
+            onClick={() => onViewChange('home')}
+          >
+            Dashboard
+          </button>
+          <button
+            type="button"
+            className={`nav-btn ${view === 'insights' ? 'active' : ''}`}
+            onClick={() => onViewChange('insights')}
+          >
+            Daily Insights
+          </button>
+        </nav>
       </div>
-      <div className="header-center">
-        <span className="header-date">{today}</span>
-        {weather && (
-          <span className="header-weather">
-            {weather.houston.temp}°F Houston · {weather.paloAlto.temp}°F Palo Alto
-          </span>
-        )}
-      </div>
-      <nav className="header-nav">
-        <button
-          type="button"
-          className={`nav-btn ${view === 'home' ? 'active' : ''}`}
-          onClick={() => onViewChange('home')}
-        >
-          Dashboard
-        </button>
-        <button
-          type="button"
-          className={`nav-btn ${view === 'insights' ? 'active' : ''}`}
-          onClick={() => onViewChange('insights')}
-        >
-          Daily Insights
-        </button>
-      </nav>
+      <NewsTicker />
     </header>
   );
 }
