@@ -1,4 +1,4 @@
-// Daily report service: sector performance and Economic Savings (AI vs Energy)
+// Daily report service: full sector performance analysis
 const stocksConfig      = require('../config/stocks');
 const marketDataService = require('./marketDataService');
 const reportsStore      = require('../storage/reportsStore');
@@ -57,64 +57,52 @@ async function getSectorAvgDailyChange(tickers) {
 }
 
 /**
- * Core report builder — shared by getDailyReport and generateReport.
+ * Core report builder — processes every configured sector.
  * @param {string}  date          ISO date label (YYYY-MM-DD)
  * @param {boolean} forceArchive  save regardless of trading-day check
  */
 async function buildReport(date, forceArchive = false) {
-  const sectors      = stocksConfig.sectors || [];
-  const aiSector     = sectors.find((s) => s.id === 'ai');
-  const energySector = sectors.find((s) => s.id === 'energy');
+  const sectors = stocksConfig.sectors || [];
 
-  if (!aiSector || !energySector) {
-    return {
-      date,
-      sectors: [],
-      economicSavings: null,
-      error: 'AI or Energy sector not configured',
-    };
+  if (sectors.length === 0) {
+    return { date, sectors: [], economicSavings: null, error: 'No sectors configured', asOf: new Date().toISOString() };
   }
 
-  const [aiResult, energyResult] = await Promise.all([
-    getSectorAvgDailyChange(aiSector.tickers),
-    getSectorAvgDailyChange(energySector.tickers),
-  ]);
+  // Fetch all sectors in parallel
+  const results = await Promise.all(
+    sectors.map((s) => getSectorAvgDailyChange(s.tickers))
+  );
 
+  // Build sector objects with narrative analysis for every sector
+  const reportSectors = sectors.map((sector, i) => {
+    const result = results[i];
+    const avg    = Math.round(result.avgDailyChangePercent * 100) / 100;
+    return {
+      id:    sector.id,
+      label: sector.label,
+      avgDailyChangePercent: avg,
+      tickerCount: sector.tickers.length,
+      stocks: result.quotes.map((q) => ({
+        ticker:        q.ticker,
+        price:         q.price        != null ? Math.round(q.price        * 100) / 100 : null,
+        changePercent: q.changePercent != null ? Math.round(q.changePercent * 100) / 100 : null,
+      })),
+      analysis: buildSectorNarrative(sector.label, result.quotes, avg),
+    };
+  });
+
+  // economicSavings = AI avg − Energy avg (kept for the badge in the UI)
+  const aiIdx     = sectors.findIndex((s) => s.id === 'ai');
+  const energyIdx = sectors.findIndex((s) => s.id === 'energy');
   const economicSavings =
-    aiResult.avgDailyChangePercent - energyResult.avgDailyChangePercent;
-
-  const aiAvg     = Math.round(aiResult.avgDailyChangePercent     * 100) / 100;
-  const energyAvg = Math.round(energyResult.avgDailyChangePercent * 100) / 100;
+    aiIdx >= 0 && energyIdx >= 0
+      ? Math.round((results[aiIdx].avgDailyChangePercent - results[energyIdx].avgDailyChangePercent) * 100) / 100
+      : null;
 
   const report = {
     date,
-    sectors: [
-      {
-        id:    aiSector.id,
-        label: aiSector.label,
-        avgDailyChangePercent: aiAvg,
-        tickerCount: aiSector.tickers.length,
-        stocks: aiResult.quotes.map((q) => ({
-          ticker:        q.ticker,
-          price:         q.price != null ? Math.round(q.price * 100) / 100 : null,
-          changePercent: q.changePercent != null ? Math.round(q.changePercent * 100) / 100 : null,
-        })),
-        analysis: buildSectorNarrative(aiSector.label, aiResult.quotes, aiAvg),
-      },
-      {
-        id:    energySector.id,
-        label: energySector.label,
-        avgDailyChangePercent: energyAvg,
-        tickerCount: energySector.tickers.length,
-        stocks: energyResult.quotes.map((q) => ({
-          ticker:        q.ticker,
-          price:         q.price != null ? Math.round(q.price * 100) / 100 : null,
-          changePercent: q.changePercent != null ? Math.round(q.changePercent * 100) / 100 : null,
-        })),
-        analysis: buildSectorNarrative(energySector.label, energyResult.quotes, energyAvg),
-      },
-    ],
-    economicSavings: Math.round(economicSavings * 100) / 100,
+    sectors: reportSectors,
+    economicSavings,
     asOf: new Date().toISOString(),
   };
 
