@@ -475,3 +475,97 @@ body {
   font-size: 0.8rem;
   font-weight: 500;
 }
+
+/* ── Insights news list ──────────────────────────────────── */
+.insight-card--news {
+  grid-column: 1 / -1;   /* span full width */
+}
+.insights-news-list {
+  list-style: none;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.insights-news-link {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  text-decoration: none;
+  line-height: 1.4;
+}
+.insights-news-link:hover { color: #3b82f6; text-decoration: underline; }
+.insights-news-source {
+  font-size: 0.68rem;
+  color: #475569;
+}
+
+/* ── Report cards (DailyInsights) ───────────────────────── */
+.report-card {
+  background: #1e293b;
+  border: 1px solid #293548;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+.report-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #293548;
+  flex-wrap: wrap;
+}
+.report-card-date {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  flex: 1;
+}
+.report-card-asof {
+  font-size: 0.68rem;
+  color: #475569;
+}
+.report-sector-block {
+  padding: 12px 0;
+  border-bottom: 1px solid #1e293b;
+}
+.report-sector-block:last-child { border-bottom: none; }
+.report-sector-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.report-sector-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #64748b;
+  font-weight: 600;
+}
+.report-sector-analysis {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.report-stocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.report-stock-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #0f172a;
+  border-radius: 6px;
+  font-size: 0.72rem;
+}
+.report-stock-ticker {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+.report-stock-change { font-weight: 500; }

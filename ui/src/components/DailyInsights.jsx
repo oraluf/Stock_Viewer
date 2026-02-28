@@ -5,26 +5,58 @@ function sign(n) {
   return n > 0 ? `+${n}%` : `${n}%`;
 }
 
-function ReportRow({ report }) {
+function SectorBlock({ sector }) {
+  const avg = sector.avgDailyChangePercent;
+  return (
+    <div className="report-sector-block">
+      <div className="report-sector-header">
+        <span className="report-sector-label">{sector.label}</span>
+        <span className={`change ${avg >= 0 ? 'up' : 'down'}`}>{sign(avg)}</span>
+      </div>
+
+      {sector.analysis && (
+        <p className="report-sector-analysis">{sector.analysis}</p>
+      )}
+
+      {sector.stocks && sector.stocks.length > 0 && (
+        <div className="report-stocks">
+          {sector.stocks.map((s) => (
+            <span key={s.ticker} className="report-stock-pill">
+              <span className="report-stock-ticker">{s.ticker}</span>
+              {s.changePercent != null && (
+                <span className={`report-stock-change ${s.changePercent >= 0 ? 'up' : 'down'}`}>
+                  {sign(s.changePercent)}
+                </span>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReportCard({ report }) {
   const savings = report.economicSavings;
   const savingsClass = savings > 0 ? 'up' : savings < 0 ? 'down' : '';
 
   return (
-    <div className="insights-row">
-      <span className="insights-row-date">{report.date}</span>
-      <div className="insights-row-sectors">
-        {report.sectors.map((s) => (
-          <span key={s.id} className="insights-row-sector">
-            <span className="insights-row-sector-label">{s.label}</span>
-            <span className={`change ${s.avgDailyChangePercent >= 0 ? 'up' : 'down'}`}>
-              {sign(s.avgDailyChangePercent)}
-            </span>
+    <div className="report-card">
+      <div className="report-card-header">
+        <span className="report-card-date">{report.date}</span>
+        {savings != null && (
+          <span className={`change ${savingsClass}`}>
+            AI−Energy: {sign(savings)}
           </span>
-        ))}
+        )}
+        <span className="report-card-asof">
+          {report.asOf ? new Date(report.asOf).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+        </span>
       </div>
-      <span className={`insights-row-savings change ${savingsClass}`}>
-        {savings != null ? `AI−Energy: ${sign(savings)}` : '—'}
-      </span>
+
+      {report.sectors.map((s) => (
+        <SectorBlock key={s.id} sector={s} />
+      ))}
     </div>
   );
 }
@@ -34,11 +66,10 @@ export default function DailyInsights() {
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
 
-  // Manual generate state
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   const [genDate,    setGenDate]    = useState(yesterday);
   const [generating, setGenerating] = useState(false);
-  const [genMsg,     setGenMsg]     = useState(null); // { type: 'ok'|'err', text }
+  const [genMsg,     setGenMsg]     = useState(null);
 
   function loadArchive() {
     setLoading(true);
@@ -98,7 +129,7 @@ export default function DailyInsights() {
         )}
       </div>
 
-      {/* ── Archive list ── */}
+      {/* ── Archive ── */}
       {loading && <p className="insights-empty">Loading archive…</p>}
       {error   && <p className="insights-empty" style={{ color: '#ef4444' }}>{error}</p>}
 
@@ -110,7 +141,7 @@ export default function DailyInsights() {
       )}
 
       {!loading && archive.map((report) => (
-        <ReportRow key={report.date} report={report} />
+        <ReportCard key={report.date} report={report} />
       ))}
     </section>
   );

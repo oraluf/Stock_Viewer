@@ -1,29 +1,27 @@
 import { useState, useEffect } from 'react';
-import { fetchReportDaily, fetchWeather } from '../api';
+import { fetchReportDaily, fetchNews } from '../api';
 
-/**
- * Placeholders for Economic Savings (AI vs Energy) and Weather (Houston, Palo Alto).
- * [cite: 2026-02-02]
- */
 export default function InsightsPlaceholders() {
-  const [report, setReport] = useState(null);
-  const [weather, setWeather] = useState(null);
+  const [report,    setReport]    = useState(null);
+  const [news,      setNews]      = useState([]);
   const [reportErr, setReportErr] = useState(null);
-  const [weatherErr, setWeatherErr] = useState(null);
 
   useEffect(() => {
     fetchReportDaily()
       .then(setReport)
       .catch((e) => setReportErr(e.message));
-    fetchWeather()
-      .then(setWeather)
-      .catch((e) => setWeatherErr(e.message));
+
+    fetchNews()
+      .then((items) => setNews(items.slice(0, 5)))
+      .catch(() => {});
   }, []);
 
   return (
     <section className="insights-placeholders">
       <h3 className="insights-title">Insights &amp; Savings</h3>
       <div className="insights-grid">
+
+        {/* Economic Savings */}
         <div className="insight-card">
           <span className="insight-label">Economic Savings</span>
           <span className="insight-value">
@@ -35,26 +33,33 @@ export default function InsightsPlaceholders() {
           </span>
           <span className="insight-desc">AI vs Energy avg daily change</span>
         </div>
-        <div className="insight-card">
-          <span className="insight-label">Houston (Energy)</span>
-          <span className="insight-value">
-            {weatherErr
-              ? '—'
-              : weather?.houston
-                ? `${weather.houston.temp}° · ${weather.houston.conditions}`
-                : '…'}
-          </span>
+
+        {/* Market News */}
+        <div className="insight-card insight-card--news">
+          <span className="insight-label">Market News</span>
+          {news.length === 0 ? (
+            <span className="insight-value" style={{ fontSize: '0.8rem' }}>Loading…</span>
+          ) : (
+            <ul className="insights-news-list">
+              {news.map((item) => (
+                <li key={item.id}>
+                  <a
+                    href={item.url || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="insights-news-link"
+                  >
+                    {item.headline}
+                  </a>
+                  {item.source && (
+                    <span className="insights-news-source"> · {item.source}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-        <div className="insight-card">
-          <span className="insight-label">Palo Alto (Tech)</span>
-          <span className="insight-value">
-            {weatherErr
-              ? '—'
-              : weather?.paloAlto
-                ? `${weather.paloAlto.temp}° · ${weather.paloAlto.conditions}`
-                : '…'}
-          </span>
-        </div>
+
       </div>
     </section>
   );

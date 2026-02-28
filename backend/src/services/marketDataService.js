@@ -30,11 +30,10 @@ async function getSeries(ticker, range) {
   return data;
 }
 
-// ─── Weather placeholder (mock) — for Houston (Energy hub) and Palo Alto (Tech hub)
+// ─── Weather placeholder (mock) — NYC. Replace with real API call using OPENWEATHER_KEY.
 function getWeatherMock() {
   return {
-    houston: { temp: 72, conditions: 'Partly cloudy', label: 'Houston (Energy hub)' },
-    paloAlto: { temp: 68, conditions: 'Sunny', label: 'Palo Alto (Tech hub)' },
+    nyc: { temp: 38, conditions: 'Cloudy', label: 'New York City' },
     asOf: new Date().toISOString(),
   };
 }

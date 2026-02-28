@@ -66,9 +66,9 @@ function AppHeader({ view, onViewChange }) {
         </div>
         <div className="header-center">
           <span className="header-date">{today}</span>
-          {weather && (
+          {weather?.nyc && (
             <span className="header-weather">
-              {weather.houston.temp}°F Houston · {weather.paloAlto.temp}°F Palo Alto
+              NYC {weather.nyc.temp}°F · {weather.nyc.conditions}
             </span>
           )}
         </div>
