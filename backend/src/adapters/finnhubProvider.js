@@ -112,8 +112,16 @@ async function getHistoricalChange(ticker, dateStr) {
   const from   = Math.floor((dateMs - 7 * 86400 * 1000) / 1000); // 7 days back covers weekends + holidays
   const to     = Math.floor(dateMs / 1000) + 86400;               // end of selected date
 
-  const url  = `${BASE}/stock/candle?symbol=${symbol}&resolution=D&from=${from}&to=${to}&token=${key}`;
-  const data = await httpGet(url);
+  const url = `${BASE}/stock/candle?symbol=${symbol}&resolution=D&from=${from}&to=${to}&token=${key}`;
+
+  let data;
+  try {
+    data = await httpGet(url);
+  } catch (err) {
+    // 403 = free-tier plan restriction for this symbol (common for crypto/Binance)
+    console.warn(`[Historical] ${ticker} candle unavailable: ${err.message}`);
+    return { ticker, price: null, changePercent: null };
+  }
 
   // Need ≥ 2 candles: the selected date and one prior (to compute changePercent)
   if (data.s !== 'ok' || !Array.isArray(data.c) || data.c.length < 2) {

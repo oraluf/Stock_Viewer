@@ -51,7 +51,11 @@ async function getSectorAvgDailyChange(tickers, date) {
     ? (ticker) => marketDataService.getHistoricalQuote(ticker, date)
     : (ticker) => marketDataService.getQuote(ticker);
 
-  const quotes = await Promise.all(tickers.map(fetchFn));
+  // allSettled so one failed ticker (e.g. 403 on a crypto candle) doesn't abort the whole sector
+  const settled = await Promise.allSettled(tickers.map(fetchFn));
+  const quotes  = settled.map((r, i) =>
+    r.status === 'fulfilled' ? r.value : { ticker: tickers[i], price: null, changePercent: null }
+  );
   const valid = quotes.filter((q) => q.changePercent != null && !Number.isNaN(q.changePercent));
   const avgDailyChangePercent =
     valid.length === 0
