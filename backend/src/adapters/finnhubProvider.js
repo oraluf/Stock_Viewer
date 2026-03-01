@@ -98,4 +98,33 @@ async function getNews(category = 'general', count = 12) {
   }));
 }
 
-module.exports = { getQuote, getSeries, getNews };
+// ─── Historical daily change (candles) ────────────────────────────────────────
+// Used by reportService when generating a report for a past date.
+// Fetches the last 7 days of daily candles and returns close + changePercent
+// for the selected date vs its previous trading day.
+
+async function getHistoricalChange(ticker, dateStr) {
+  const key = process.env.FINNHUB_API_KEY;
+  if (!key) throw new Error('FINNHUB_API_KEY env var is not set');
+
+  const symbol = toApiSymbol(ticker);
+  const dateMs = new Date(dateStr).getTime();
+  const from   = Math.floor((dateMs - 7 * 86400 * 1000) / 1000); // 7 days back covers weekends + holidays
+  const to     = Math.floor(dateMs / 1000) + 86400;               // end of selected date
+
+  const url  = `${BASE}/stock/candle?symbol=${symbol}&resolution=D&from=${from}&to=${to}&token=${key}`;
+  const data = await httpGet(url);
+
+  // Need ≥ 2 candles: the selected date and one prior (to compute changePercent)
+  if (data.s !== 'ok' || !Array.isArray(data.c) || data.c.length < 2) {
+    return { ticker, price: null, changePercent: null }; // weekend / holiday / no data
+  }
+
+  const close         = data.c[data.c.length - 1];
+  const prevClose     = data.c[data.c.length - 2];
+  const changePercent = prevClose ? ((close - prevClose) / prevClose) * 100 : null;
+
+  return { ticker, price: close, changePercent };
+}
+
+module.exports = { getQuote, getSeries, getNews, getHistoricalChange };

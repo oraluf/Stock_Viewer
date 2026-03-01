@@ -38,4 +38,16 @@ function getWeatherMock() {
   };
 }
 
-module.exports = { getQuote, getSeries, getWeatherMock };
+async function getHistoricalQuote(ticker, date) {
+  // Historical data is immutable — cache by ticker + date to avoid redundant API calls
+  const cached = cache.get('hist', { ticker, date });
+  if (cached) return cached;
+
+  const data = await getAdapter().getHistoricalChange(ticker, date);
+  if (data.changePercent != null) {
+    cache.set('hist', { ticker, date }, data, 30 * 60 * 1000); // 30-min TTL
+  }
+  return data;
+}
+
+module.exports = { getQuote, getSeries, getHistoricalQuote, getWeatherMock };

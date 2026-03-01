@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { fetchReportArchive, generateReport } from '../api';
+import { useState } from 'react';
+import { generateReport } from '../api';
 
 function sign(n) {
   return n > 0 ? `+${n}%` : `${n}%`;
@@ -62,32 +62,19 @@ function ReportCard({ report }) {
 }
 
 export default function DailyInsights() {
-  const [archive,    setArchive]    = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState(null);
-
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  const [genDate,    setGenDate]    = useState(yesterday);
-  const [generating, setGenerating] = useState(false);
-  const [genMsg,     setGenMsg]     = useState(null);
-
-  function loadArchive() {
-    setLoading(true);
-    fetchReportArchive()
-      .then((data) => { setArchive(data); setError(null); })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }
-
-  useEffect(() => { loadArchive(); }, []);
+  const [genDate,       setGenDate]       = useState(yesterday);
+  const [generating,    setGenerating]    = useState(false);
+  const [genMsg,        setGenMsg]        = useState(null);
+  const [currentReport, setCurrentReport] = useState(null);
 
   async function handleGenerate() {
     setGenerating(true);
     setGenMsg(null);
     try {
       const report = await generateReport(genDate);
-      setGenMsg({ type: 'ok', text: `Report for ${report.date} saved.` });
-      loadArchive();
+      setCurrentReport(report);
+      setGenMsg({ type: 'ok', text: `Report for ${report.date} sent to Google Docs.` });
     } catch (e) {
       setGenMsg({ type: 'err', text: e.message });
     } finally {
@@ -98,10 +85,10 @@ export default function DailyInsights() {
   return (
     <section className="daily-insights">
       <div className="daily-insights-header">
-        <h2 className="daily-insights-title">Daily Insights Archive</h2>
+        <h2 className="daily-insights-title">Report Generator</h2>
       </div>
 
-      {/* ── Manual generate ── */}
+      {/* ── Generate panel ── */}
       <div className="generate-panel">
         <span className="generate-label">Generate report for:</span>
         <input
@@ -129,20 +116,13 @@ export default function DailyInsights() {
         )}
       </div>
 
-      {/* ── Archive ── */}
-      {loading && <p className="insights-empty">Loading archive…</p>}
-      {error   && <p className="insights-empty" style={{ color: '#ef4444' }}>{error}</p>}
-
-      {!loading && !error && archive.length === 0 && (
+      {/* ── Latest generated report ── */}
+      {!currentReport && (
         <p className="insights-empty">
-          No reports yet. Use the generator above or visit the Dashboard on a trading day
-          (Mon–Fri) to auto-save today's report.
+          Select a date and click Generate to create a report.
         </p>
       )}
-
-      {!loading && archive.map((report) => (
-        <ReportCard key={report.date} report={report} />
-      ))}
+      {currentReport && <ReportCard report={currentReport} />}
     </section>
   );
 }

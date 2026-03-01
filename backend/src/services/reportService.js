@@ -43,11 +43,15 @@ function buildSectorNarrative(label, quotes, avg) {
 
 /**
  * Fetches quotes for all tickers in a sector and returns average daily change %.
+ * Uses live quotes for today; historical candle data for any past date.
  */
-async function getSectorAvgDailyChange(tickers) {
-  const quotes = await Promise.all(
-    tickers.map((ticker) => marketDataService.getQuote(ticker))
-  );
+async function getSectorAvgDailyChange(tickers, date) {
+  const today   = new Date().toISOString().slice(0, 10);
+  const fetchFn = date && date !== today
+    ? (ticker) => marketDataService.getHistoricalQuote(ticker, date)
+    : (ticker) => marketDataService.getQuote(ticker);
+
+  const quotes = await Promise.all(tickers.map(fetchFn));
   const valid = quotes.filter((q) => q.changePercent != null && !Number.isNaN(q.changePercent));
   const avgDailyChangePercent =
     valid.length === 0
@@ -68,9 +72,9 @@ async function buildReport(date, forceArchive = false) {
     return { date, sectors: [], economicSavings: null, error: 'No sectors configured', asOf: new Date().toISOString() };
   }
 
-  // Fetch all sectors in parallel
+  // Fetch all sectors in parallel — pass date so past dates use historical candles
   const results = await Promise.all(
-    sectors.map((s) => getSectorAvgDailyChange(s.tickers))
+    sectors.map((s) => getSectorAvgDailyChange(s.tickers, date))
   );
 
   // Build sector objects with narrative analysis for every sector
