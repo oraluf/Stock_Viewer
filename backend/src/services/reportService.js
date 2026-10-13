@@ -114,7 +114,11 @@ async function buildReport(date, forceArchive = false) {
     asOf: new Date().toISOString(),
   };
 
-  if (forceArchive || isTradingDay()) {
+  if (forceArchive) {
+    reportsStore.save(report);
+    // Manual generation: wait so the UI can tell the user whether it reached Google Docs
+    report.sentToDocs = await sheetsService.appendReport(report);
+  } else if (isTradingDay()) {
     reportsStore.save(report);
     sheetsService.appendReport(report); // fire-and-forget; no-op if not configured
   }

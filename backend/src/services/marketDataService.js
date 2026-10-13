@@ -36,14 +36,6 @@ async function getSeries(ticker, range) {
   return data;
 }
 
-// ─── Weather placeholder (mock) — NYC. Replace with real API call using OPENWEATHER_KEY.
-function getWeatherMock() {
-  return {
-    nyc: { temp: 38, conditions: 'Cloudy', label: 'New York City' },
-    asOf: new Date().toISOString(),
-  };
-}
-
 async function getHistoricalQuote(ticker, date) {
   // Historical data is immutable — cache by ticker + date to avoid redundant API calls
   const cached = cache.get('hist', { ticker, date });
@@ -56,4 +48,4 @@ async function getHistoricalQuote(ticker, date) {
   return data;
 }
 
-module.exports = { getQuote, getSeries, getHistoricalQuote, getWeatherMock };
+module.exports = { getQuote, getSeries, getHistoricalQuote };

@@ -1,14 +1,13 @@
-// Weather placeholder — Houston (Energy) and Palo Alto (Tech) for future integration
-const marketDataService = require('../services/marketDataService');
+// נתיב מזג אוויר (Weather Route) — live NYC weather for the header
+const router         = require('express').Router();
+const weatherService = require('../services/weatherService');
 
-const router = require('express').Router();
-
-router.get('/', (_req, res) => {
+router.get('/', async (_req, res) => {
   try {
-    const data = marketDataService.getWeatherMock();
+    const data = await weatherService.getWeather();
     res.json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message || 'Weather unavailable' });
+    res.status(502).json({ error: err.message || 'Weather unavailable' });
   }
 });
 

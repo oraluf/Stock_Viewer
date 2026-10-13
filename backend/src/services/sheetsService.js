@@ -81,11 +81,13 @@ async function post(url, body) {
   } else {
     console.warn('[Webhook] HTTP', res.status, '|', text.slice(0, 200));
   }
+  return res.ok;
 }
 
 /**
  * Sends a report to whichever Google webhooks are configured.
- * Both calls are fire-and-forget; failures are logged but never thrown.
+ * Failures are logged but never thrown.
+ * @returns {Promise<boolean>} true if at least one webhook accepted the report
  */
 async function appendReport(report) {
   const sheetsUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
@@ -93,7 +95,7 @@ async function appendReport(report) {
 
   if (!sheetsUrl && !docsUrl) {
     console.log('[Webhook] No webhook URLs set — skipping. Add GOOGLE_DOCS_WEBHOOK_URL to .env');
-    return;
+    return false;
   }
 
   console.log('[Webhook] GOOGLE_DOCS_WEBHOOK_URL:', docsUrl   ? '✓ set' : '✗ not set');
@@ -101,13 +103,15 @@ async function appendReport(report) {
 
   const targets = [...new Set([sheetsUrl, docsUrl].filter(Boolean))];
 
-  await Promise.allSettled(
+  const results = await Promise.all(
     targets.map((url) =>
-      post(url, report).catch((err) =>
-        console.warn('[Webhook] Failed (non-fatal):', err.message)
-      )
+      post(url, report).catch((err) => {
+        console.warn('[Webhook] Failed (non-fatal):', err.message);
+        return false;
+      })
     )
   );
+  return results.some(Boolean);
 }
 
 module.exports = { appendReport };

@@ -13,6 +13,8 @@ import { fetchSeries } from '../api';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler);
 
+const SERIES_REFRESH_MS = 5 * 60 * 1000;   // matches backend series cache
+
 function formatLabel(iso, range) {
   const d = new Date(iso);
   if (range === '1D') {
@@ -46,7 +48,19 @@ export default function StockChart({ ticker, range }) {
         }
       });
 
-    return () => { cancelled = true; };
+    // Silent refresh — keeps the current chart on screen if a refresh fails
+    const id = setInterval(() => {
+      fetchSeries(ticker, range)
+        .then(data => {
+          if (!cancelled && Array.isArray(data) && data.length) {
+            setSeries(data);
+            setError(false);
+          }
+        })
+        .catch(() => {});
+    }, SERIES_REFRESH_MS);
+
+    return () => { cancelled = true; clearInterval(id); };
   }, [ticker, range]);
 
   if (loading) return <div className="chart-placeholder">Loading {range} chart…</div>;

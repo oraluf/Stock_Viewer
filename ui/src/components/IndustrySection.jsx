@@ -3,6 +3,7 @@ import { fetchQuote } from '../api';
 import StockChart from './StockChart';
 
 const RANGES = ['1D', '1M', '1Y'];
+const QUOTE_REFRESH_MS = 60 * 1000;   // backend caches quotes for 30s
 
 export default function IndustrySection({ industry }) {
   const [quote,       setQuote]       = useState(null);
@@ -10,11 +11,19 @@ export default function IndustrySection({ industry }) {
   const [quoteError,  setQuoteError]  = useState(null);
 
   useEffect(() => {
+    let cancelled = false;
     setQuote(null);
     setQuoteError(null);
-    fetchQuote(industry.ticker)
-      .then(setQuote)
-      .catch(err => setQuoteError(err.message));
+
+    // Background refreshes keep the last good quote on screen if one fails
+    const load = (isRefresh) =>
+      fetchQuote(industry.ticker)
+        .then(q => { if (!cancelled) { setQuote(q); setQuoteError(null); } })
+        .catch(err => { if (!cancelled && !isRefresh) setQuoteError(err.message); });
+
+    load(false);
+    const id = setInterval(() => load(true), QUOTE_REFRESH_MS);
+    return () => { cancelled = true; clearInterval(id); };
   }, [industry.ticker]);
 
   const isUp = quote && quote.changePercent >= 0;
