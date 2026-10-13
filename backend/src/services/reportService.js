@@ -2,7 +2,6 @@
 const stocksConfig      = require('../config/stocks');
 const marketDataService = require('./marketDataService');
 const reportsStore      = require('../storage/reportsStore');
-const sheetsService     = require('./sheetsService');
 
 // Returns true only on Mon–Fri (US trading days; does not account for holidays)
 function isTradingDay() {
@@ -114,13 +113,8 @@ async function buildReport(date, forceArchive = false) {
     asOf: new Date().toISOString(),
   };
 
-  if (forceArchive) {
+  if (forceArchive || isTradingDay()) {
     reportsStore.save(report);
-    // Manual generation: wait so the UI can tell the user whether it reached Google Docs
-    report.sentToDocs = await sheetsService.appendReport(report);
-  } else if (isTradingDay()) {
-    reportsStore.save(report);
-    sheetsService.appendReport(report); // fire-and-forget; no-op if not configured
   }
 
   return report;

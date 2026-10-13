@@ -74,12 +74,7 @@ export default function DailyInsights() {
     try {
       const report = await generateReport(genDate);
       setCurrentReport(report);
-      setGenMsg({
-        type: 'ok',
-        text: report.sentToDocs
-          ? `Report for ${report.date} generated and saved to Google Docs.`
-          : `Report for ${report.date} generated.`,
-      });
+      setGenMsg({ type: 'ok', text: `Report for ${report.date} generated.` });
     } catch (e) {
       setGenMsg({ type: 'err', text: e.message });
     } finally {

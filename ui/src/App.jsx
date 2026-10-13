@@ -3,6 +3,7 @@ import { fetchConfig, fetchWeather, fetchNews } from './api';
 import IndustrySection from './components/IndustrySection';
 import InsightsPlaceholders from './components/InsightsPlaceholders';
 import DailyInsights from './components/DailyInsights';
+import IntroSplash from './components/IntroSplash';
 
 // Normalize config: backend may return sectors or legacy industries
 function normalizeSectors(data) {
@@ -168,6 +169,7 @@ function App() {
 
   return (
     <div className="app">
+      <IntroSplash />
       <AppHeader view={view} onViewChange={handleViewChange} />
 
       {view === 'insights' ? (
