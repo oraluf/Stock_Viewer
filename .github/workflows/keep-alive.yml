@@ -1,0 +1,15 @@
+# Render's free tier sleeps after 15 minutes without traffic, which makes the
+# first visit wait ~50s. Pinging /health every 10 minutes keeps it warm.
+name: Keep backend awake
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        run: curl --fail --silent --show-error --max-time 90 https://stock-viewer-8tqs.onrender.com/health

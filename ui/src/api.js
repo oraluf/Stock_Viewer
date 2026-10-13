@@ -18,6 +18,8 @@ export const fetchReportDaily   = ()      => request('/report/daily');
 export const fetchReportArchive = ()      => request('/report/archive');
 export const fetchWeather       = ()      => request('/weather');
 export const fetchNews          = ()      => request('/news');
+export const fetchOverview      = ()      => request('/overview');
+export const fetchBrief         = ()      => request('/brief');
 
 export function generateReport(date) {
   return fetch(`${BASE}/report/generate`, {

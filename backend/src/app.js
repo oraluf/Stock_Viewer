@@ -11,6 +11,8 @@ const seriesRouter = require('./routes/series');
 const reportRouter = require('./routes/report');
 const weatherRouter = require('./routes/weather');
 const newsRouter   = require('./routes/news');
+const overviewRouter = require('./routes/overview');
+const briefRouter  = require('./routes/brief');
 
 const app = express();
 
@@ -25,6 +27,8 @@ app.use('/series', seriesRouter);
 app.use('/report', reportRouter);
 app.use('/weather', weatherRouter);
 app.use('/news',   newsRouter);
+app.use('/overview', overviewRouter);
+app.use('/brief',  briefRouter);
 
 // 404 catch-all
 app.use((_req, res) => {
@@ -32,10 +36,13 @@ app.use((_req, res) => {
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Stock Viewer backend  →  http://localhost:${PORT}`);
-  console.log(`Provider: ${process.env.PROVIDER || 'finnhub'}`);
-});
+// Only listen when run directly, so tests can import the app without opening a port
+if (require.main === module) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`Stock Viewer backend  →  http://localhost:${PORT}`);
+    console.log(`AI brief: ${process.env.ANTHROPIC_API_KEY ? 'enabled' : 'disabled (no ANTHROPIC_API_KEY)'}`);
+  });
+}
 
 module.exports = app;

@@ -45,8 +45,11 @@ function ReportCard({ report }) {
       <div className="report-card-header">
         <span className="report-card-date">{report.date}</span>
         {savings != null && (
-          <span className={`change ${savingsClass}`}>
-            AI−Energy: {sign(savings)}
+          <span
+            className={`change ${savingsClass}`}
+            title="How much the AI sector out- or under-performed Energy today (AI average minus Energy average)"
+          >
+            AI vs Energy spread: {sign(savings)}
           </span>
         )}
         <span className="report-card-asof">

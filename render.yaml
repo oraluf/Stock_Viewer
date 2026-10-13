@@ -8,5 +8,7 @@ services:
     envVars:
       - key: FINNHUB_API_KEY
         sync: false        # set manually in Render dashboard (never committed)
+      - key: ANTHROPIC_API_KEY
+        sync: false        # optional — enables the AI market brief
       - key: NODE_ENV
         value: production

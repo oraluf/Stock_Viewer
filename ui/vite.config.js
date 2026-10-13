@@ -14,6 +14,8 @@ export default defineConfig({
       '/report':  'http://localhost:3001',
       '/weather': 'http://localhost:3001',
       '/news':    'http://localhost:3001',
+      '/overview': 'http://localhost:3001',
+      '/brief':   'http://localhost:3001',
     },
   },
 });

@@ -1,121 +1,126 @@
 # Stock Dashboard
 
-A real-time stock market dashboard — live prices and historical charts for 6 sectors (AI, Energy, Technology, Leading Index, Crypto, Metals), daily report archive, and market insights.
+[![CI](https://github.com/oraluf/Stock_Viewer/actions/workflows/ci.yml/badge.svg)](https://github.com/oraluf/Stock_Viewer/actions/workflows/ci.yml)
 
-**Live demo:** _add your Vercel URL here_
+A live market dashboard covering six sectors (AI, Energy, Technology, Leading Index, Crypto, Metals), with real-time quotes, interactive charts, and a daily market brief written by Claude.
 
----
+**Live demo → [stock-viewer-iota.vercel.app](https://stock-viewer-iota.vercel.app/)**
 
-## Tech Stack
+![Dashboard home page](docs/screenshot.png)
 
-| Layer    | Technology                        |
-|----------|-----------------------------------|
-| Frontend | React 18, Vite 5, Chart.js 4      |
-| Backend  | Node.js 18, Express 4             |
-| Data     | Finnhub API                       |
-| Deploy   | Vercel (UI) + Render (Backend)    |
+> The backend runs on Render's free tier. A scheduled GitHub Action keeps it awake, but if it was asleep the first load can take up to a minute — the page says so while it waits.
 
 ---
 
-## Project Structure
+## Features
 
-```
-Stock_Viewer/
-├── backend/
-│   └── src/
-│       ├── app.js                      # Express entry point
-│       ├── routes/                     # HTTP handlers (no logic)
-│       ├── services/                   # Business logic + cache + reports
-│       ├── adapters/finnhubProvider.js # Finnhub API (swappable)
-│       ├── config/stocks.js            # Sectors & tickers — single source of truth
-│       └── storage/                    # In-memory store + reports archive
-└── ui/
-    └── src/
-        ├── App.jsx                     # App shell + view routing
-        ├── api.js                      # All fetch calls to backend
-        └── components/
-            ├── IndustrySection.jsx     # Stock card: quote + chart
-            ├── StockChart.jsx          # Chart.js line chart + demo fallback
-            ├── InsightsPlaceholders.jsx# Economic Savings + Weather
-            └── DailyInsights.jsx       # Daily report archive viewer
+- **AI market brief** — Claude reads the day's sector moves and the latest headlines, and writes a short brief: what moved, what plausibly explains it, and what to watch. It is told to say so when no headline explains a move instead of inventing a cause.
+- **Sector overview** — each sector card shows today's average move, best and worst ticker, and a one-month trend line.
+- **Per-stock charts** — 1D / 1M / 1Y price history for every ticker.
+- **Auto-refresh** — quotes refresh every minute, charts every five minutes, without reloading the page.
+- **Report generator** — builds a sector-by-sector report for any past trading day.
+- **Live context** — scrolling market headlines and current New York weather.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  UI["React UI<br/>(Vercel)"] -->|REST| API["Express API<br/>(Render)"]
+  API --> Cache[("TTL cache")]
+  API --> Finnhub["Finnhub<br/>quotes · news"]
+  API --> Yahoo["Yahoo Finance<br/>price history"]
+  API --> Meteo["Open-Meteo<br/>weather"]
+  API --> Claude["Claude API<br/>market brief"]
 ```
 
+```
+backend/src/
+├── app.js                  Express entry point
+├── routes/                 HTTP layer only — validation + status codes
+├── services/               Business logic, caching, AI brief, reports
+├── adapters/               One file per data provider (Finnhub, Yahoo)
+├── config/stocks.js        Sectors & tickers — single source of truth
+└── storage/                In-memory store
+ui/src/
+├── App.jsx                 Shell, routing between views, server wake-up handling
+├── api.js                  Every call to the backend
+└── components/             Sector cards, charts, AI brief, report generator, intro
+```
+
+## Engineering decisions
+
+**Two market-data providers, chosen per job.** Finnhub's free tier provides live quotes and news but returns `403` for historical candles. Rather than paying for one provider or faking chart data, price history comes from Yahoo Finance through a second adapter with the same normalized output (`{ t, o, h, l, c, v }`). Services choose the adapter; routes never know which provider is behind them.
+
+**The AI brief is cached and structured.** One Claude call serves every visitor for 30 minutes, and concurrent requests share a single in-flight call, so a traffic spike costs the same as one visit. The response is constrained to a JSON schema, so the UI renders fields directly instead of parsing free text. Refusals are handled explicitly, and if no API key is configured the panel is simply hidden.
+
+**No fabricated data.** Earlier versions filled gaps with placeholders (random chart lines, demo headlines, fixed weather). Every one was replaced with real data or an honest "unavailable" state. When a background refresh fails, the last good value stays on screen.
+
+**Built for a sleeping free-tier server.** The UI shows a wake-up notice after 3 seconds and retries the first request, and a scheduled workflow pings `/health` every 10 minutes.
+
+**Rate-limit aware.** TTL caching per endpoint (quotes 30s, charts 5min, news 10min, weather 15min, brief 30min) keeps the app inside Finnhub's free-tier limit of 60 calls/minute.
+
+## Tech stack
+
+| Layer    | Technology |
+|----------|------------|
+| Frontend | React 18, Vite 6, Chart.js 4 |
+| Backend  | Node.js 22, Express 4, Anthropic SDK |
+| Data     | Finnhub, Yahoo Finance, Open-Meteo |
+| AI       | Claude Opus 5.5 (structured outputs) |
+| Testing  | Node's built-in test runner, GitHub Actions CI |
+| Hosting  | Vercel (UI) + Render (API) |
+
 ---
 
-## Run Locally
+## Run locally
 
-### Prerequisites
-- Node.js 18+
-- A free [Finnhub API key](https://finnhub.io)
-
-### 1. Backend
+Requires Node.js 18+ and a free [Finnhub API key](https://finnhub.io/register). An [Anthropic API key](https://console.anthropic.com) is optional and enables the AI brief.
 
 ```bash
+# Backend
 cd backend
-# Copy the example env file and fill in your key
-cp ../.env.example .env
+cp ../.env.example .env      # add your keys
 npm install
-npm run dev       # → http://localhost:3001
-```
+npm run dev                  # http://localhost:3001
 
-### 2. Frontend (new terminal)
-
-```bash
+# Frontend (second terminal)
 cd ui
 npm install
-npm run dev       # → http://localhost:3000
+npm run dev                  # http://localhost:3000 — proxies API calls to :3001
 ```
 
-Vite proxies all `/quote`, `/series`, etc. calls to `:3001` automatically.
+Run the tests:
 
----
+```bash
+cd backend && npm test
+```
 
-## Deploy (Free)
+## Environment variables
 
-### Backend → Render
+| Variable            | Where                | Purpose |
+|---------------------|----------------------|---------|
+| `FINNHUB_API_KEY`   | `backend/.env`, Render | Live quotes and news |
+| `ANTHROPIC_API_KEY` | `backend/.env`, Render | AI market brief (optional) |
+| `VITE_API_URL`      | Vercel               | Backend URL (leave empty for local dev) |
 
-1. [render.com](https://render.com) → **New Web Service** → connect GitHub repo
-2. Render auto-detects `render.yaml`
-3. Add env var: `FINNHUB_API_KEY` = your key
-4. Deploy → copy the URL (e.g. `https://stock-viewer-backend.onrender.com`)
+## API
 
-> Free tier sleeps after 15 min of inactivity; first request after sleep is slow (~30s).
+| Method | Path | Description |
+|--------|------|-------------|
+| GET  | `/health` | Health check |
+| GET  | `/config` | Sectors and tickers |
+| GET  | `/overview` | Per-sector average move, best/worst ticker, 1-month trend |
+| GET  | `/brief` | AI market brief (`503` when no Anthropic key is set) |
+| GET  | `/quote?ticker=NVDA` | Live price and daily change |
+| GET  | `/series?ticker=NVDA&range=1D` | Price history — `1D`, `1M` or `1Y` |
+| GET  | `/news` | Latest market headlines |
+| GET  | `/weather` | Current New York weather |
+| GET  | `/report/daily` | Today's sector report |
+| GET  | `/report/archive` | Reports generated since the server started |
+| POST | `/report/generate` | Report for a given date — body `{ "date": "YYYY-MM-DD" }` |
 
-### Frontend → Vercel
+## Deploy
 
-1. [vercel.com](https://vercel.com) → **New Project** → import GitHub repo
-2. Add env var: `VITE_API_URL` = your Render URL
-3. Deploy → share the link
+**Backend → Render.** New Web Service from this repo; `render.yaml` sets the root directory and commands. Add `FINNHUB_API_KEY` and `ANTHROPIC_API_KEY` under Environment.
 
----
-
-## Environment Variables
-
-| Variable          | Location       | Description                         |
-|-------------------|----------------|-------------------------------------|
-| `FINNHUB_API_KEY` | `backend/.env` | Finnhub API key                     |
-| `VITE_API_URL`    | Vercel env vars| Backend URL (empty in local dev)    |
-
----
-
-## API Endpoints
-
-| Method | Path                            | Description                        |
-|--------|---------------------------------|------------------------------------|
-| GET    | `/health`                       | Health check                       |
-| GET    | `/config`                       | All sectors + tickers              |
-| GET    | `/quote?ticker=NVDA`            | Live quote (price + daily change)  |
-| GET    | `/series?ticker=NVDA&range=1D`  | OHLCV candles (1D / 1M / 1Y)      |
-| GET    | `/report/daily`                 | Today's sector performance report  |
-| GET    | `/report/archive`               | History of saved daily reports     |
-| GET    | `/weather`                      | Weather placeholder (Houston + Palo Alto) |
-
----
-
-## Design Principles
-
-- **Adapter Pattern** — Finnhub is isolated in one file; swap to another provider by editing one function
-- **TTL Cache** — 30s for quotes, 5min for series — minimises API rate-limit hits
-- **Graceful Degradation** — Charts fall back to demo data on API failure; UI never crashes
-- **Single Source of Truth** — All sectors/tickers defined once in `config/stocks.js`
-- **Trading-Day Awareness** — Daily reports are only auto-saved on weekdays
+**Frontend → Vercel.** Import the repo; `vercel.json` sets the build. Add `VITE_API_URL` with the Render URL.

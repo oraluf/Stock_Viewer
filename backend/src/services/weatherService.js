@@ -43,4 +43,4 @@ async function getWeather() {
   return data;
 }
 
-module.exports = { getWeather };
+module.exports = { getWeather, describe };

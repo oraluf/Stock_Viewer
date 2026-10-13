@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react';
-import { fetchConfig, fetchWeather, fetchNews } from './api';
+import { fetchConfig, fetchWeather, fetchNews, fetchOverview } from './api';
 import IndustrySection from './components/IndustrySection';
 import InsightsPlaceholders from './components/InsightsPlaceholders';
 import DailyInsights from './components/DailyInsights';
 import IntroSplash from './components/IntroSplash';
+import SectorCard from './components/SectorCard';
+import MarketBrief from './components/MarketBrief';
+
+const OVERVIEW_REFRESH_MS = 60 * 1000;
+const WAKE_NOTICE_MS      = 3000;   // Render free tier can take ~50s to wake
+const CONFIG_RETRIES      = 3;
+const GITHUB_URL          = 'https://github.com/oraluf/Stock_Viewer';
 
 // Normalize config: backend may return sectors or legacy industries
 function normalizeSectors(data) {
@@ -63,7 +70,7 @@ function AppHeader({ view, onViewChange }) {
       <div className="header">
         <div className="header-left">
           <h1>Stock Dashboard</h1>
-          <span className="subtitle">Live market data · Finnhub</span>
+          <span className="subtitle">Live market data · AI insights</span>
         </div>
         <div className="header-center">
           <span className="header-date">{today}</span>
@@ -96,25 +103,45 @@ function AppHeader({ view, onViewChange }) {
 }
 
 function LandingPage({ sectors, onSelect }) {
+  const [overview, setOverview] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = () =>
+      fetchOverview()
+        .then((data) => { if (!cancelled) setOverview(data); })
+        .catch(() => {});   // cards still render without stats
+    load();
+    const id = setInterval(load, OVERVIEW_REFRESH_MS);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
+  const statsFor = (id) => overview?.sectors.find((s) => s.id === id);
+
   return (
     <div className="landing">
+      <MarketBrief overview={overview} />
       <div className="landing-cards">
         {sectors.map((sector) => (
-          <button
+          <SectorCard
             key={sector.id}
-            type="button"
-            className="sector-card"
-            onClick={() => onSelect(sector)}
-          >
-            <span className="sector-card-label">{sector.label}</span>
-            <span className="sector-card-tickers">
-              {sector.tickers?.join(', ') || sector.ticker}
-            </span>
-          </button>
+            sector={sector}
+            stats={statsFor(sector.id)}
+            onSelect={onSelect}
+          />
         ))}
       </div>
       <InsightsPlaceholders />
     </div>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="footer">
+      <span>Prices: Finnhub · History: Yahoo Finance · Weather: Open-Meteo · Brief: Claude</span>
+      <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">View source on GitHub ↗</a>
+    </footer>
   );
 }
 
@@ -145,11 +172,29 @@ function App() {
   const [selectedSector, setSelectedSector] = useState(null);
   const [view, setView] = useState('home');   // 'home' | 'insights'
   const [error, setError] = useState(null);
+  const [waking, setWaking] = useState(false);
 
   useEffect(() => {
-    fetchConfig()
-      .then((data) => setSectors(normalizeSectors(data)))
-      .catch((err) => setError(err.message));
+    let cancelled = false;
+    // A sleeping backend answers slowly (or fails) on the first request — say so and retry
+    const notice = setTimeout(() => setWaking(true), WAKE_NOTICE_MS);
+
+    async function load(attempt) {
+      try {
+        const data = await fetchConfig();
+        if (!cancelled) setSectors(normalizeSectors(data));
+      } catch (err) {
+        if (cancelled) return;
+        if (attempt < CONFIG_RETRIES) setTimeout(() => load(attempt + 1), 3000);
+        else setError(err.message);
+        return;
+      }
+      clearTimeout(notice);
+      setWaking(false);
+    }
+    load(1);
+
+    return () => { cancelled = true; clearTimeout(notice); };
   }, []);
 
   function handleViewChange(newView) {
@@ -162,7 +207,7 @@ function App() {
       <div className="fatal-error">
         <h2>Could not load config</h2>
         <p>{error}</p>
-        <p>Make sure the backend is running on port 3001.</p>
+        <p>The data server did not respond. Please refresh in a minute.</p>
       </div>
     );
   }
@@ -181,6 +226,11 @@ function App() {
         />
       ) : sectors.length === 0 ? (
         <div className="landing">
+          {waking && (
+            <p className="waking-notice">
+              Waking up the data server — this takes up to a minute on the first visit…
+            </p>
+          )}
           <div className="landing-cards">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="sector-card skeleton" />
@@ -190,6 +240,8 @@ function App() {
       ) : (
         <LandingPage sectors={sectors} onSelect={setSelectedSector} />
       )}
+
+      <Footer />
     </div>
   );
 }

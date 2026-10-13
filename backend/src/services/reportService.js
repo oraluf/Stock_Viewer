@@ -139,4 +139,4 @@ function getArchive() {
   return reportsStore.getAll();
 }
 
-module.exports = { getDailyReport, generateReport, getArchive };
+module.exports = { getDailyReport, generateReport, getArchive, buildSectorNarrative };
