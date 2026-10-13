@@ -1,6 +1,6 @@
 // מתאם פינהאב (Finnhub Adapter)
-// Isolates all Finnhub API calls. To switch providers, implement the same
-// interface { getQuote, getSeries } in a new file and update marketDataService.
+// Isolates all Finnhub API calls (live quotes + news). Historical candles are a
+// paid Finnhub feature, so they live in yahooProvider instead.
 
 const BASE = 'https://finnhub.io/api/v1';
 
@@ -43,43 +43,6 @@ async function getQuote(ticker) {
   };
 }
 
-// ─── Series (candles) ─────────────────────────────────────────────────────────
-
-function rangeParams(range) {
-  const now = Math.floor(Date.now() / 1000);
-  switch (range) {
-    case '1D': return { resolution: '15', from: now - 86400,       to: now };
-    case '1M': return { resolution: 'D',  from: now - 31  * 86400, to: now };
-    case '1Y': return { resolution: 'D',  from: now - 366 * 86400, to: now };
-    default:   throw new Error(`Unknown range: ${range}`);
-  }
-}
-
-async function getSeries(ticker, range) {
-  const key = process.env.FINNHUB_API_KEY;
-  if (!key) throw new Error('FINNHUB_API_KEY env var is not set');
-
-  const symbol = toApiSymbol(ticker);
-  const { resolution, from, to } = rangeParams(range);
-  const url = `${BASE}/stock/candle?symbol=${symbol}&resolution=${resolution}&from=${from}&to=${to}&token=${key}`;
-
-  const data = await httpGet(url);
-
-  if (data.s !== 'ok') {
-    throw new Error(`Finnhub returned status "${data.s}" for ${ticker} [${range}]`);
-  }
-
-  // Normalize to common format: [{ t, o, h, l, c, v }]
-  return data.t.map((ts, i) => ({
-    t: new Date(ts * 1000).toISOString(),
-    o: data.o[i],
-    h: data.h[i],
-    l: data.l[i],
-    c: data.c[i],
-    v: data.v[i],
-  }));
-}
-
 // ─── Market News ──────────────────────────────────────────────────────────────
 
 async function getNews(category = 'general', count = 12) {
@@ -98,41 +61,4 @@ async function getNews(category = 'general', count = 12) {
   }));
 }
 
-// ─── Historical daily change (candles) ────────────────────────────────────────
-// Used by reportService when generating a report for a past date.
-// Fetches the last 7 days of daily candles and returns close + changePercent
-// for the selected date vs its previous trading day.
-
-async function getHistoricalChange(ticker, dateStr) {
-  const key = process.env.FINNHUB_API_KEY;
-  if (!key) throw new Error('FINNHUB_API_KEY env var is not set');
-
-  const symbol = toApiSymbol(ticker);
-  const dateMs = new Date(dateStr).getTime();
-  const from   = Math.floor((dateMs - 7 * 86400 * 1000) / 1000); // 7 days back covers weekends + holidays
-  const to     = Math.floor(dateMs / 1000) + 86400;               // end of selected date
-
-  const url = `${BASE}/stock/candle?symbol=${symbol}&resolution=D&from=${from}&to=${to}&token=${key}`;
-
-  let data;
-  try {
-    data = await httpGet(url);
-  } catch (err) {
-    // 403 = free-tier plan restriction for this symbol (common for crypto/Binance)
-    console.warn(`[Historical] ${ticker} candle unavailable: ${err.message}`);
-    return { ticker, price: null, changePercent: null };
-  }
-
-  // Need ≥ 2 candles: the selected date and one prior (to compute changePercent)
-  if (data.s !== 'ok' || !Array.isArray(data.c) || data.c.length < 2) {
-    return { ticker, price: null, changePercent: null }; // weekend / holiday / no data
-  }
-
-  const close         = data.c[data.c.length - 1];
-  const prevClose     = data.c[data.c.length - 2];
-  const changePercent = prevClose ? ((close - prevClose) / prevClose) * 100 : null;
-
-  return { ticker, price: close, changePercent };
-}
-
-module.exports = { getQuote, getSeries, getNews, getHistoricalChange };
+module.exports = { getQuote, getNews };

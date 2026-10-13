@@ -3,6 +3,7 @@
 
 const cache   = require('./cacheService');
 const finnhub = require('../adapters/finnhubProvider');
+const yahoo   = require('../adapters/yahooProvider');
 
 const QUOTE_TTL  = 30  * 1000;       // 30 seconds
 const SERIES_TTL = 5   * 60 * 1000;  // 5 minutes
@@ -10,6 +11,11 @@ const SERIES_TTL = 5   * 60 * 1000;  // 5 minutes
 function getAdapter() {
   // Future: switch on process.env.PROVIDER to swap adapters
   return finnhub;
+}
+
+// Finnhub free tier blocks candles (403) — history comes from Yahoo
+function getHistoryAdapter() {
+  return yahoo;
 }
 
 async function getQuote(ticker) {
@@ -25,7 +31,7 @@ async function getSeries(ticker, range) {
   const cached = cache.get('series', { ticker, range });
   if (cached) return cached;
 
-  const data = await getAdapter().getSeries(ticker, range);
+  const data = await getHistoryAdapter().getSeries(ticker, range);
   cache.set('series', { ticker, range }, data, SERIES_TTL);
   return data;
 }
@@ -43,7 +49,7 @@ async function getHistoricalQuote(ticker, date) {
   const cached = cache.get('hist', { ticker, date });
   if (cached) return cached;
 
-  const data = await getAdapter().getHistoricalChange(ticker, date);
+  const data = await getHistoryAdapter().getHistoricalChange(ticker, date);
   if (data.changePercent != null) {
     cache.set('hist', { ticker, date }, data, 30 * 60 * 1000); // 30-min TTL
   }
